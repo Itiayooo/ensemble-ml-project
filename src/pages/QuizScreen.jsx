@@ -4,95 +4,113 @@ import { Brain } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import { useTimer } from '../hooks/useTimer';
 import { useAssessment } from '../context/AssessmentContext';
-
-// Sample questions (you'll replace this with real data later)
-const QUESTIONS = [
-  {
-    id: 1,
-    question: 'What is the time complexity of binary search on a sorted array?',
-    options: ['O(n)', 'O(log n)', 'O(n log n)', 'O(1)'],
-    correctAnswer: 1
-  },
-  {
-    id: 2,
-    question: 'Which data structure uses LIFO (Last In First Out)?',
-    options: ['Queue', 'Stack', 'Array', 'Linked List'],
-    correctAnswer: 1
-  },
-  {
-    id: 3,
-    question: 'What is the purpose of the "this" keyword in JavaScript?',
-    options: [
-      'To reference the current file',
-      'To reference the current object',
-      'To create a new variable',
-      'To import modules'
-    ],
-    correctAnswer: 1
-  }
-  // Add 7 more questions to make it 10 total
-];
+import * as api from '../utils/api';
 
 export default function QuizScreen() {
   const navigate = useNavigate();
-  const { markStageComplete, saveStageData } = useAssessment();
+  const { sessionId, markStageComplete, saveStageData } = useAssessment();
   const { formatTime, seconds, start } = useTimer(true);
   
+  const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch questions from backend
   useEffect(() => {
-    start(); // Start timer when component mounts
-  }, []);
+    const fetchQuestions = async () => {
+      try {
+        const data = await api.startQuiz(sessionId);
+        setQuestions(data.questions);
+        setLoading(false);
+        start();
+      } catch (err) {
+        console.error('Failed to fetch quiz questions:', err);
+        setError('Failed to load quiz. Please try again.');
+        setLoading(false);
+      }
+    };
+
+    if (sessionId) {
+      fetchQuestions();
+    }
+  }, [sessionId]);
 
   const handleNext = () => {
     if (selectedAnswer === null) return;
 
-    // Record answer with timing data
     const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
     const answerData = {
-      questionId: QUESTIONS[currentQuestion].id,
-      selectedAnswer,
-      correctAnswer: QUESTIONS[currentQuestion].correctAnswer,
-      isCorrect: selectedAnswer === QUESTIONS[currentQuestion].correctAnswer,
-      timeSpent
+      question_id: questions[currentQuestion].id,
+      selected_answer: selectedAnswer,
+      time_spent: timeSpent
     };
 
     setAnswers([...answers, answerData]);
 
-    // Move to next question or finish
-    if (currentQuestion < QUESTIONS.length - 1) {
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(null);
       setQuestionStartTime(Date.now());
     } else {
-      // Quiz complete
       finishQuiz([...answers, answerData]);
     }
   };
 
-  const finishQuiz = (allAnswers) => {
-    const score = allAnswers.filter(a => a.isCorrect).length;
-    const totalTime = seconds;
-    
-    const quizData = {
-      answers: allAnswers,
-      score,
-      totalQuestions: QUESTIONS.length,
-      totalTime,
-      completedAt: new Date().toISOString()
-    };
+  const finishQuiz = async (allAnswers) => {
+    try {
+      const result = await api.submitQuiz(sessionId, allAnswers);
+      
+      const quizData = {
+        score: result.score,
+        correct: result.correct,
+        totalQuestions: result.total,
+        totalTime: seconds,
+        passed: result.passed,
+        completedAt: new Date().toISOString()
+      };
 
-    saveStageData('quiz', quizData);
-    markStageComplete('quiz');
-    
-    // Navigate back to dashboard
-    navigate('/');
+      saveStageData('quiz', quizData);
+      markStageComplete('quiz');
+      
+      navigate('/');
+    } catch (err) {
+      console.error('Failed to submit quiz:', err);
+      alert('Failed to submit quiz. Please try again.');
+    }
   };
 
-  const progress = ((currentQuestion + 1) / QUESTIONS.length) * 100;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading quiz questions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => navigate('/')}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -100,6 +118,7 @@ export default function QuizScreen() {
       
       <div className="max-w-4xl mx-auto p-12">
         <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
+          {/* Rest of your existing quiz UI - just use questions[currentQuestion] */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="bg-blue-100 p-2 rounded">
@@ -112,13 +131,12 @@ export default function QuizScreen() {
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-blue-600">
-                {currentQuestion + 1} / {QUESTIONS.length}
+                {currentQuestion + 1} / {questions.length}
               </div>
               <div className="text-xs text-slate-500">Questions</div>
             </div>
           </div>
 
-          {/* Progress bar */}
           <div className="mb-8">
             <div className="bg-slate-200 rounded-full h-2 mb-2">
               <div 
@@ -128,14 +146,13 @@ export default function QuizScreen() {
             </div>
           </div>
 
-          {/* Question */}
           <div className="mb-8">
             <h3 className="text-2xl font-semibold text-slate-800 mb-6">
-              {QUESTIONS[currentQuestion].question}
+              {questions[currentQuestion].question}
             </h3>
 
             <div className="space-y-3">
-              {QUESTIONS[currentQuestion].options.map((option, idx) => (
+              {questions[currentQuestion].options.map((option, idx) => (
                 <label 
                   key={idx} 
                   className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
@@ -157,7 +174,6 @@ export default function QuizScreen() {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="flex justify-between items-center pt-6 border-t">
             <div className="text-sm text-slate-500">
               Time on question: <span className="font-mono font-semibold">
@@ -173,7 +189,7 @@ export default function QuizScreen() {
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
-              {currentQuestion === QUESTIONS.length - 1 ? 'Finish Quiz' : 'Next Question'}
+              {currentQuestion === questions.length - 1 ? 'Finish Quiz' : 'Next Question'}
             </button>
           </div>
         </div>
