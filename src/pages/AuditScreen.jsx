@@ -11,7 +11,7 @@ export default function AuditScreen() {
   const navigate = useNavigate();
   const { sessionId, markStageComplete, saveStageData } = useAssessment();
   const { formatTime, seconds, start } = useTimer(true);
-  
+
   const [problems, setProblems] = useState([]);
   const [currentProblem, setCurrentProblem] = useState(0);
   const [language, setLanguage] = useState('python');
@@ -21,7 +21,7 @@ export default function AuditScreen() {
   const [isRunning, setIsRunning] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
-  
+
   const [editCount, setEditCount] = useState(0);
   const [linesChanged, setLinesChanged] = useState(new Set());
   const [editHistory, setEditHistory] = useState([]);
@@ -69,34 +69,34 @@ export default function AuditScreen() {
 
   const handleEditorChange = (value) => {
     if (!value) return;
-    
+
     setCode(value);
     setEditCount(prev => prev + 1);
-    
+
     const oldLines = previousCode.current.split('\n');
     const newLines = value.split('\n');
     const changed = new Set(linesChanged);
-    
+
     newLines.forEach((line, idx) => {
       if (oldLines[idx] !== line) {
         changed.add(idx + 1);
       }
     });
-    
+
     setLinesChanged(changed);
-    
+
     setEditHistory(prev => [...prev, {
       timestamp: Date.now() - sessionStartTime.current,
       linesChanged: changed.size,
       codeLength: value.length
     }]);
-    
+
     previousCode.current = value;
   };
 
   const handleTest = async () => {
     setIsRunning(true);
-    
+
     try {
       const submission = {
         session_id: sessionId,
@@ -137,7 +137,7 @@ export default function AuditScreen() {
       };
 
       const result = await api.submitAudit(submission);
-      
+
       const auditData = {
         problem: problems[currentProblem].title,
         language,
@@ -165,7 +165,7 @@ export default function AuditScreen() {
       saveStageData('audit', auditData);
       markStageComplete('audit');
       setHasSubmitted(true);
-      
+
       setTimeout(() => {
         navigate('/results');
       }, 2000);
@@ -188,7 +188,7 @@ export default function AuditScreen() {
   return (
     <div className="min-h-screen bg-slate-50">
       <TopBar currentStage={3} showTimer={true} timeElapsed={formatTime()} />
-      
+
       <div className="flex h-[calc(100vh-64px)]">
         <div className="w-2/5 bg-white border-r border-slate-200 overflow-y-auto">
           <div className="p-6">
@@ -198,10 +198,11 @@ export default function AuditScreen() {
               </div>
               <h2 className="text-xl font-bold text-slate-800">Logic Audit</h2>
             </div>
-            
+
             <div className="bg-purple-50 border-l-4 border-purple-600 p-3 mb-6">
               <p className="text-sm text-purple-800 font-semibold">
-                Problem {currentProblem + 1} of {problems.length}
+                {/* Problem {currentProblem + 1} of {problems.length} */}
+                Stage C: Supervisor Mode
               </p>
             </div>
 
@@ -231,15 +232,14 @@ export default function AuditScreen() {
                 <h4 className="font-semibold text-slate-800 mb-3">Known Issues:</h4>
                 <div className="space-y-2">
                   {problem.known_issues.map((issue, idx) => (
-                    <div 
+                    <div
                       key={idx}
-                      className={`p-3 rounded-lg border-l-4 ${
-                        issue.severity === 'high' 
-                          ? 'bg-red-50 border-red-500' 
+                      className={`p-3 rounded-lg border-l-4 ${issue.severity === 'high'
+                          ? 'bg-red-50 border-red-500'
                           : issue.severity === 'medium'
-                          ? 'bg-amber-50 border-amber-500'
-                          : 'bg-blue-50 border-blue-500'
-                      }`}
+                            ? 'bg-amber-50 border-amber-500'
+                            : 'bg-blue-50 border-blue-500'
+                        }`}
                     >
                       <div className="text-xs font-semibold uppercase mb-1">
                         {issue.severity} - {issue.type}
@@ -270,7 +270,7 @@ export default function AuditScreen() {
         <div className="w-3/5 flex flex-col bg-slate-900">
           <div className="bg-slate-800 px-4 py-3 flex items-center justify-between border-b border-slate-700">
             <div className="flex items-center gap-3">
-              <select 
+              <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
                 className="bg-slate-700 text-white px-3 py-1.5 rounded text-sm"
@@ -279,9 +279,9 @@ export default function AuditScreen() {
                 <option value="javascript">JavaScript</option>
               </select>
             </div>
-            
+
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={handleTest}
                 disabled={isRunning || hasSubmitted}
                 className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
@@ -289,7 +289,7 @@ export default function AuditScreen() {
                 <Play size={16} />
                 {isRunning ? 'Testing...' : 'Test'}
               </button>
-              <button 
+              <button
                 onClick={handleSubmit}
                 disabled={!output || hasSubmitted}
                 className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"

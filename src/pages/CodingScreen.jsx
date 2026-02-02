@@ -176,7 +176,8 @@ export default function CodingScreen() {
             
             <div className="bg-blue-50 border-l-4 border-blue-600 p-3 mb-6">
               <p className="text-sm text-blue-800 font-semibold">
-                Problem {currentProblem + 1} of {problems.length}
+                {/* Problem {currentProblem + 1} of {problems.length} */}
+                Stage B: Creator Mode
               </p>
             </div>
 

@@ -13,9 +13,9 @@ export default function ResultsScreen() {
 
   useEffect(() => {
     // Check if all stages completed
-    if (!completedStages.includes('quiz') || 
-        !completedStages.includes('coding') || 
-        !completedStages.includes('audit')) {
+    if (!completedStages.includes('quiz') ||
+      !completedStages.includes('coding') ||
+      !completedStages.includes('audit')) {
       navigate('/');
       return;
     }
@@ -27,95 +27,170 @@ export default function ResultsScreen() {
     }, 2000);
   }, []);
 
+  // const calculateResults = () => {
+  //   // Calculate employability based on all stages
+  //   const quizScore = stageData.quiz 
+  //     ? (stageData.quiz.score / stageData.quiz.totalQuestions) * 100 
+  //     : 0;
+
+  //   const codingScore = stageData.coding 
+  //     ? stageData.coding.testResults.percentage 
+  //     : 0;
+
+  //   const auditScore = stageData.audit 
+  //     ? stageData.audit.metrics.overallScore 
+  //     : 0;
+
+  //   // Weighted average (can adjust weights)
+  //   const finalScore = Math.round(
+  //     (quizScore * 0.25) + 
+  //     (codingScore * 0.40) + 
+  //     (auditScore * 0.35)
+  //   );
+
+  //   setEmployabilityScore(finalScore);
+  // };
+
   const calculateResults = () => {
-    // Calculate employability based on all stages
-    const quizScore = stageData.quiz 
-      ? (stageData.quiz.score / stageData.quiz.totalQuestions) * 100 
-      : 0;
-    
-    const codingScore = stageData.coding 
-      ? stageData.coding.testResults.percentage 
-      : 0;
-    
-    const auditScore = stageData.audit 
-      ? stageData.audit.metrics.overallScore 
+    // Calculate scores from actual backend data
+    const quizScore = stageData.quiz
+      ? stageData.quiz.score
       : 0;
 
-    // Weighted average (can adjust weights)
+    const codingScore = stageData.coding
+      ? stageData.coding.testResults.percentage
+      : 0;
+
+    const auditScore = stageData.audit
+      ? stageData.audit.metrics.overallScore
+      : 0;
+
+    // Weighted average (adjust weights as needed)
     const finalScore = Math.round(
-      (quizScore * 0.25) + 
-      (codingScore * 0.40) + 
-      (auditScore * 0.35)
+      (quizScore * 0.30) +      // Quiz: 30%
+      (codingScore * 0.40) +    // Coding: 40%
+      (auditScore * 0.30)       // Audit: 30%
     );
 
-    setEmployabilityScore(finalScore);
+    setEmployabilityScore(Math.min(100, finalScore)); // Cap at 100%
   };
 
   // Generate SHAP-style feature contributions
+  // const getFeatureContributions = () => {
+  //   const baseScore = 50; // Baseline employability
+  //   const contributions = [];
+
+  //   // Quiz contributions
+  //   if (stageData.quiz) {
+  //     const quizAccuracy = (stageData.quiz.score / stageData.quiz.totalQuestions) * 100;
+  //     const quizContribution = ((quizAccuracy - 50) / 5); // Normalize
+  //     contributions.push({
+  //       feature: 'Quiz Accuracy',
+  //       contribution: Math.round(quizContribution),
+  //       color: quizContribution > 0 ? '#10B981' : '#EF4444'
+  //     });
+
+  //     const avgTimePerQuestion = stageData.quiz.totalTime / stageData.quiz.totalQuestions;
+  //     const timeContribution = avgTimePerQuestion < 45 ? 8 : avgTimePerQuestion > 90 ? -5 : 2;
+  //     contributions.push({
+  //       feature: 'Response Speed',
+  //       contribution: timeContribution,
+  //       color: timeContribution > 0 ? '#10B981' : '#EF4444'
+  //     });
+  //   }
+
+  //   // Coding contributions
+  //   if (stageData.coding) {
+  //     const semanticScore = stageData.coding.testResults.percentage;
+  //     const semanticContribution = ((semanticScore - 50) / 3);
+  //     contributions.push({
+  //       feature: 'Semantic Accuracy',
+  //       contribution: Math.round(semanticContribution),
+  //       color: semanticContribution > 0 ? '#10B981' : '#EF4444'
+  //     });
+
+  //     const efficiencyScore = stageData.coding.runCount < 5 ? 10 : stageData.coding.runCount > 15 ? -8 : 3;
+  //     contributions.push({
+  //       feature: 'Debugging Efficiency',
+  //       contribution: efficiencyScore,
+  //       color: efficiencyScore > 0 ? '#10B981' : '#EF4444'
+  //     });
+
+  //     const complexityPenalty = stageData.coding.codeMetrics.linesOfCode > 50 ? -8 : 3;
+  //     contributions.push({
+  //       feature: 'Code Complexity',
+  //       contribution: complexityPenalty,
+  //       color: complexityPenalty > 0 ? '#10B981' : '#EF4444'
+  //     });
+  //   }
+
+  //   // Audit contributions
+  //   if (stageData.audit) {
+  //     const auditPrecision = stageData.audit.metrics.bugFixRate;
+  //     const auditContribution = ((auditPrecision - 50) / 4);
+  //     contributions.push({
+  //       feature: 'Bug Detection Rate',
+  //       contribution: Math.round(auditContribution),
+  //       color: auditContribution > 0 ? '#10B981' : '#EF4444'
+  //     });
+
+  //     const editEfficiency = stageData.audit.metrics.editEfficiency;
+  //     const editContribution = ((editEfficiency - 50) / 5);
+  //     contributions.push({
+  //       feature: 'Edit Precision',
+  //       contribution: Math.round(editContribution),
+  //       color: editContribution > 0 ? '#10B981' : '#EF4444'
+  //     });
+  //   }
+
+  //   return contributions.sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
+  // };
+
   const getFeatureContributions = () => {
-    const baseScore = 50; // Baseline employability
     const contributions = [];
 
     // Quiz contributions
     if (stageData.quiz) {
-      const quizAccuracy = (stageData.quiz.score / stageData.quiz.totalQuestions) * 100;
-      const quizContribution = ((quizAccuracy - 50) / 5); // Normalize
+      const quizAccuracy = stageData.quiz.score;
       contributions.push({
         feature: 'Quiz Accuracy',
-        contribution: Math.round(quizContribution),
-        color: quizContribution > 0 ? '#10B981' : '#EF4444'
-      });
-
-      const avgTimePerQuestion = stageData.quiz.totalTime / stageData.quiz.totalQuestions;
-      const timeContribution = avgTimePerQuestion < 45 ? 8 : avgTimePerQuestion > 90 ? -5 : 2;
-      contributions.push({
-        feature: 'Response Speed',
-        contribution: timeContribution,
-        color: timeContribution > 0 ? '#10B981' : '#EF4444'
+        contribution: Math.round((quizAccuracy - 50) / 2), // Normalize to +/- range
+        color: quizAccuracy >= 50 ? '#10B981' : '#EF4444'
       });
     }
 
     // Coding contributions
     if (stageData.coding) {
-      const semanticScore = stageData.coding.testResults.percentage;
-      const semanticContribution = ((semanticScore - 50) / 3);
+      const codingAccuracy = stageData.coding.testResults.percentage;
       contributions.push({
-        feature: 'Semantic Accuracy',
-        contribution: Math.round(semanticContribution),
-        color: semanticContribution > 0 ? '#10B981' : '#EF4444'
+        feature: 'Code Correctness',
+        contribution: Math.round((codingAccuracy - 50) / 2),
+        color: codingAccuracy >= 50 ? '#10B981' : '#EF4444'
       });
 
-      const efficiencyScore = stageData.coding.runCount < 5 ? 10 : stageData.coding.runCount > 15 ? -8 : 3;
+      const linesOfCode = stageData.coding.codeMetrics?.lines_of_code || 0;
+      const complexityScore = linesOfCode < 30 ? 8 : linesOfCode > 60 ? -8 : 0;
       contributions.push({
-        feature: 'Debugging Efficiency',
-        contribution: efficiencyScore,
-        color: efficiencyScore > 0 ? '#10B981' : '#EF4444'
-      });
-
-      const complexityPenalty = stageData.coding.codeMetrics.linesOfCode > 50 ? -8 : 3;
-      contributions.push({
-        feature: 'Code Complexity',
-        contribution: complexityPenalty,
-        color: complexityPenalty > 0 ? '#10B981' : '#EF4444'
+        feature: 'Code Simplicity',
+        contribution: complexityScore,
+        color: complexityScore >= 0 ? '#10B981' : '#EF4444'
       });
     }
 
     // Audit contributions
     if (stageData.audit) {
-      const auditPrecision = stageData.audit.metrics.bugFixRate;
-      const auditContribution = ((auditPrecision - 50) / 4);
+      const bugFixRate = stageData.audit.metrics.bugFixRate || 0;
       contributions.push({
-        feature: 'Bug Detection Rate',
-        contribution: Math.round(auditContribution),
-        color: auditContribution > 0 ? '#10B981' : '#EF4444'
+        feature: 'Bug Detection',
+        contribution: Math.round((bugFixRate - 50) / 2),
+        color: bugFixRate >= 50 ? '#10B981' : '#EF4444'
       });
 
-      const editEfficiency = stageData.audit.metrics.editEfficiency;
-      const editContribution = ((editEfficiency - 50) / 5);
+      const editEfficiency = stageData.audit.metrics.editEfficiency || 0;
       contributions.push({
         feature: 'Edit Precision',
-        contribution: Math.round(editContribution),
-        color: editContribution > 0 ? '#10B981' : '#EF4444'
+        contribution: Math.round((editEfficiency - 50) / 3),
+        color: editEfficiency >= 50 ? '#10B981' : '#EF4444'
       });
     }
 
@@ -125,7 +200,7 @@ export default function ResultsScreen() {
   const generateFeedback = () => {
     const score = employabilityScore;
     const contributions = getFeatureContributions();
-    
+
     const strengths = contributions.filter(c => c.contribution > 5);
     const weaknesses = contributions.filter(c => c.contribution < -3);
 
@@ -150,29 +225,27 @@ export default function ResultsScreen() {
     // Strengths
     if (strengths.length > 0) {
       const topStrength = strengths[0];
-      feedback.strengths = `Your strongest asset is ${topStrength.feature.toLowerCase()}, contributing +${Math.abs(topStrength.contribution)}% to your overall score. ${
-        topStrength.feature === 'Semantic Accuracy' 
-          ? 'Your solutions demonstrate logical correctness and algorithmic thinking.' 
-          : topStrength.feature === 'Bug Detection Rate'
+      feedback.strengths = `Your strongest asset is ${topStrength.feature.toLowerCase()}, contributing +${Math.abs(topStrength.contribution)}% to your overall score. ${topStrength.feature === 'Semantic Accuracy'
+        ? 'Your solutions demonstrate logical correctness and algorithmic thinking.'
+        : topStrength.feature === 'Bug Detection Rate'
           ? 'You excel at identifying flaws in existing code, a critical skill for code review and maintenance.'
           : topStrength.feature === 'Quiz Accuracy'
-          ? 'Your theoretical knowledge of computer science fundamentals is solid.'
-          : 'You show efficiency in your problem-solving approach.'
-      }`;
+            ? 'Your theoretical knowledge of computer science fundamentals is solid.'
+            : 'You show efficiency in your problem-solving approach.'
+        }`;
     }
 
     // Improvements
     if (weaknesses.length > 0) {
       const topWeakness = weaknesses[0];
-      feedback.improvements = `The primary area for improvement is ${topWeakness.feature.toLowerCase()}, which reduced your score by ${Math.abs(topWeakness.contribution)}%. ${
-        topWeakness.feature === 'Code Complexity'
-          ? 'Focus on writing cleaner, more modular code. Practice refactoring exercises and study design patterns.'
-          : topWeakness.feature === 'Debugging Efficiency'
+      feedback.improvements = `The primary area for improvement is ${topWeakness.feature.toLowerCase()}, which reduced your score by ${Math.abs(topWeakness.contribution)}%. ${topWeakness.feature === 'Code Complexity'
+        ? 'Focus on writing cleaner, more modular code. Practice refactoring exercises and study design patterns.'
+        : topWeakness.feature === 'Debugging Efficiency'
           ? 'Work on systematic debugging approaches. Too many trial runs suggest a need for better problem decomposition.'
           : topWeakness.feature === 'Edit Precision'
-          ? 'Be more surgical with code modifications. Each edit should address a specific issue rather than making broad changes.'
-          : 'Consider improving your time management and problem-solving speed through regular practice.'
-      }`;
+            ? 'Be more surgical with code modifications. Each edit should address a specific issue rather than making broad changes.'
+            : 'Consider improving your time management and problem-solving speed through regular practice.'
+        }`;
     }
 
     // Recommendation
@@ -211,7 +284,7 @@ export default function ResultsScreen() {
   return (
     <div className="min-h-screen bg-slate-50">
       <TopBar currentStage={4} />
-      
+
       <div className="max-w-7xl mx-auto p-12">
         {/* Header */}
         <div className="text-center mb-8">
@@ -228,9 +301,9 @@ export default function ResultsScreen() {
           <div className="text-7xl font-bold mb-3">{employabilityScore}%</div>
           <div className="text-blue-100 text-lg">
             {employabilityScore >= 80 ? 'Excellent - Above Entry-Level Benchmark' :
-             employabilityScore >= 65 ? 'Good - Meets Entry-Level Standards' :
-             employabilityScore >= 50 ? 'Fair - Below Average' :
-             'Needs Improvement'}
+              employabilityScore >= 65 ? 'Good - Meets Entry-Level Standards' :
+                employabilityScore >= 50 ? 'Fair - Below Average' :
+                  'Needs Improvement'}
           </div>
           <div className="mt-4 flex items-center justify-center gap-4 text-sm">
             <div className="bg-blue-800 px-4 py-2 rounded-lg">
@@ -253,14 +326,14 @@ export default function ResultsScreen() {
               <BarChart3 className="text-blue-600" size={24} />
               <h3 className="text-xl font-bold text-slate-800">Feature Contributions (SHAP)</h3>
             </div>
-            
+
             <div className="mb-6">
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={chartData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis type="number" stroke="#64748b" />
                   <YAxis dataKey="name" type="category" width={120} stroke="#64748b" style={{ fontSize: '12px' }} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
                     formatter={(value) => [`${value > 0 ? '+' : ''}${value}%`, 'Impact']}
                   />
@@ -284,9 +357,8 @@ export default function ResultsScreen() {
                     )}
                     <span className="text-sm text-slate-700 font-medium">{contrib.feature}</span>
                   </div>
-                  <div className={`font-bold text-sm ${
-                    contrib.contribution > 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <div className={`font-bold text-sm ${contrib.contribution > 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {contrib.contribution > 0 ? '+' : ''}{contrib.contribution}%
                   </div>
                 </div>
@@ -297,7 +369,7 @@ export default function ResultsScreen() {
           {/* AI-Generated Feedback */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-slate-800 mb-4">AI-Generated Feedback</h3>
-            
+
             <div className="space-y-4">
               <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
                 <div className="flex items-start gap-2 mb-2">
@@ -341,10 +413,10 @@ export default function ResultsScreen() {
         {/* Performance Breakdown */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <h3 className="text-xl font-bold text-slate-800 mb-6">Stage Performance Breakdown</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Quiz Stats */}
-            {stageData.quiz && (
+            {/* {stageData.quiz && (
               <div className="border-2 border-slate-200 rounded-lg p-4 hover:border-blue-400 transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-semibold text-slate-800">Stage A: Quiz</h4>
@@ -364,6 +436,38 @@ export default function ResultsScreen() {
                   <div className="flex justify-between">
                     <span className="text-slate-600">Avg Time/Question</span>
                     <span className="font-semibold">{Math.round(stageData.quiz.totalTime / stageData.quiz.totalQuestions)}s</span>
+                  </div>
+                </div>
+              </div>
+            )} */}
+
+            {/* Quiz Stats */}
+            {stageData.quiz && (
+              <div className="border-2 border-slate-200 rounded-lg p-4 hover:border-blue-400 transition-colors">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-slate-800">Stage A: Quiz</h4>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {stageData.quiz.score ? Math.round(stageData.quiz.score) : 0}%
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Correct Answers</span>
+                    <span className="font-semibold">
+                      {stageData.quiz.correct || 0}/{stageData.quiz.totalQuestions || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Total Time</span>
+                    <span className="font-semibold">
+                      {Math.floor((stageData.quiz.totalTime || 0) / 60)}m {(stageData.quiz.totalTime || 0) % 60}s
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Avg Time/Question</span>
+                    <span className="font-semibold">
+                      {stageData.quiz.totalQuestions ? Math.round((stageData.quiz.totalTime || 0) / stageData.quiz.totalQuestions) : 0}s
+                    </span>
                   </div>
                 </div>
               </div>
@@ -401,21 +505,27 @@ export default function ResultsScreen() {
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-semibold text-slate-800">Stage C: Audit</h4>
                   <div className="text-2xl font-bold text-purple-600">
-                    {Math.round(stageData.audit.metrics.overallScore)}%
+                    {Math.round(stageData.audit.metrics?.overallScore || 0)}%
                   </div>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-600">Bugs Fixed</span>
-                    <span className="font-semibold">{stageData.audit.metrics.bugsFixed}/{stageData.audit.metrics.totalBugs}</span>
+                    <span className="font-semibold">
+                      {stageData.audit.metrics?.bugsFixed || 0}/{stageData.audit.metrics?.bugsTotal || 0}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Edit Efficiency</span>
-                    <span className="font-semibold">{Math.round(stageData.audit.metrics.editEfficiency)}%</span>
+                    <span className="font-semibold">
+                      {Math.round(stageData.audit.metrics?.editEfficiency || 0)}%
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Lines Modified</span>
-                    <span className="font-semibold">{stageData.audit.metrics.linesModified}</span>
+                    <span className="font-semibold">
+                      {stageData.audit.metrics?.linesModified || 0}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -425,7 +535,7 @@ export default function ResultsScreen() {
 
         {/* Action Buttons */}
         <div className="flex gap-4 justify-center">
-          <button 
+          <button
             onClick={() => {
               // In real app, generate PDF report
               alert('Report download would be triggered here. In production, this would call your backend API to generate a PDF with all metrics.');
@@ -435,7 +545,7 @@ export default function ResultsScreen() {
             <Download size={18} />
             Download Full Report
           </button>
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors"
           >
@@ -446,7 +556,7 @@ export default function ResultsScreen() {
         {/* Footer Note */}
         <div className="mt-8 bg-slate-100 border border-slate-200 rounded-lg p-4 text-center">
           <p className="text-sm text-slate-600">
-            This analysis was generated using an ensemble ML model combining Random Forest and XGBoost with SHAP explainability. 
+            This analysis was generated using an ensemble ML model combining Random Forest and XGBoost with SHAP explainability.
             The natural language feedback was generated using GPT-4o based on your performance metrics.
           </p>
         </div>
