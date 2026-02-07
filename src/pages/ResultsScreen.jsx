@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle, BarChart3, Download, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import TopBar from '../components/TopBar';
+
 import { useAssessment } from '../context/AssessmentContext';
+import * as api from '../utils/api';
 
 export default function ResultsScreen() {
   const navigate = useNavigate();
-  const { stageData, completedStages } = useAssessment();
+  const { stageData, completedStages, sessionId } = useAssessment();
   const [employabilityScore, setEmployabilityScore] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -195,6 +197,24 @@ export default function ResultsScreen() {
     }
 
     return contributions.sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
+  };
+
+  const handleDownloadReport = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/results/download/${sessionId}`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `skillassess_report_${sessionId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Failed to download report:', error);
+      alert('Failed to download report. Please try again.');
+    }
   };
 
   const generateFeedback = () => {
@@ -533,13 +553,12 @@ export default function ResultsScreen() {
           </div>
         </div>
 
+
+
         {/* Action Buttons */}
         <div className="flex gap-4 justify-center">
           <button
-            onClick={() => {
-              // In real app, generate PDF report
-              alert('Report download would be triggered here. In production, this would call your backend API to generate a PDF with all metrics.');
-            }}
+            onClick={handleDownloadReport}
             className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
           >
             <Download size={18} />
