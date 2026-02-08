@@ -565,7 +565,7 @@ export default function ResultsScreen() {
             Download Full Report
           </button>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => window.location.href = '/'}
             className="bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors"
           >
             Return to Dashboard
